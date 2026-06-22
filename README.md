@@ -63,7 +63,8 @@ X-Api-Key: SUA_CHAVE_DE_PROTECAO_DO_WEBHOOK
 {
   "eventId": "12345678-abcd-9012-efgh-345678901234",
   "eventType": "PLAN_UPGRADE",
-  "payloadUrl": "https://api.sandbox.console.com/..."
+  "payloadUrl": "https://api.sandbox.console.com/...",
+  "timestamp": "2026-06-22T08:00:00Z"
 }
 ```
 

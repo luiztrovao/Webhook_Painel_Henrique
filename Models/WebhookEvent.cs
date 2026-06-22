@@ -15,6 +15,9 @@ public class WebhookEvent
     [JsonPropertyName("payloadUrl")]
     public string? PayloadUrl { get; set; }
 
+    [JsonPropertyName("timestamp")]
+    public DateTime? Timestamp { get; set; }
+
     [JsonIgnore]
     public int RetryCount { get; set; } = 0;
 }
