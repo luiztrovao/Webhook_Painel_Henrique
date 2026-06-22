@@ -9,6 +9,8 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+builder.Services.AddScoped<WebhookService.Filters.ApiKeyAuthAttribute>();
+
 builder.Services.AddSingleton<IWebhookQueue, WebhookQueue>();
 
 builder.Services.AddHttpClient<ISalesforceClient, SalesforceClient>();

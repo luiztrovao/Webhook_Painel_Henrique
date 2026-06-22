@@ -2,10 +2,13 @@ using Microsoft.AspNetCore.Mvc;
 using WebhookService.Models;
 using WebhookService.Services;
 
+using WebhookService.Filters;
+
 namespace WebhookService.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[ServiceFilter(typeof(ApiKeyAuthAttribute))]
 public class WebhookController : ControllerBase
 {
     private readonly IWebhookQueue _queue;
