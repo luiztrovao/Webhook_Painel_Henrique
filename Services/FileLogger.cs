@@ -1,48 +1,44 @@
 using System;
 using System.IO;
-using System.Threading.Tasks;
+using Serilog;
+using ILogger = Serilog.ILogger;
 
 namespace WebhookService.Services;
 
 public static class FileLogger
 {
-    private static readonly string LogDirectory = "logs";
-    private static readonly string LogFilePath = Path.Combine(LogDirectory, "webhook-log.txt");
-    private static readonly object _lock = new object();
+    private static readonly ILogger _logger;
 
     static FileLogger()
     {
-        if (!Directory.Exists(LogDirectory))
+        var logDirectory = "logs";
+        if (!Directory.Exists(logDirectory))
         {
-            Directory.CreateDirectory(LogDirectory);
+            Directory.CreateDirectory(logDirectory);
         }
+
+        _logger = new LoggerConfiguration()
+            .WriteTo.File(
+                Path.Combine(logDirectory, "webhook-log-.txt"),
+                rollingInterval: RollingInterval.Day,
+                outputTemplate: "[{Timestamp:yyyy-MM-dd HH:mm:ss} UTC] [{Level:u3}] {Message:lj}{NewLine}{Exception}")
+            .CreateLogger();
     }
 
     public static void LogInfo(string message)
     {
-        Log("INFO", message);
+        _logger.Information(message);
     }
 
     public static void LogError(string message, Exception? ex = null)
     {
-        var errorMessage = ex == null ? message : $"{message}\nException: {ex.Message}\nStackTrace: {ex.StackTrace}";
-        Log("ERROR", errorMessage);
-    }
-
-    private static void Log(string level, string message)
-    {
-        try
+        if (ex != null)
         {
-            var logEntry = $"[{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss} UTC] [{level}] {message}{Environment.NewLine}";
-            
-            lock (_lock)
-            {
-                File.AppendAllText(LogFilePath, logEntry);
-            }
+            _logger.Error(ex, message);
         }
-        catch
+        else
         {
-            // Fallback: If writing to the file fails, we have nowhere else to log without throwing and crashing the app.
+            _logger.Error(message);
         }
     }
 }

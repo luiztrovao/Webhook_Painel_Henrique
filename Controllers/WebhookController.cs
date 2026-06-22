@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using WebhookService.Models;
 using WebhookService.Services;
 
+using Microsoft.AspNetCore.RateLimiting;
 using WebhookService.Filters;
 
 namespace WebhookService.Controllers;
@@ -9,6 +10,7 @@ namespace WebhookService.Controllers;
 [ApiController]
 [Route("api/[controller]")]
 [ServiceFilter(typeof(ApiKeyAuthAttribute))]
+[EnableRateLimiting("WebhookPolicy")]
 public class WebhookController : ControllerBase
 {
     private readonly IWebhookQueue _queue;
@@ -23,11 +25,6 @@ public class WebhookController : ControllerBase
     {
         try
         {
-            if (string.IsNullOrWhiteSpace(webhookEvent.EventId))
-            {
-                return BadRequest(new { Error = "EventId is required." });
-            }
-
             FileLogger.LogInfo($"Webhook event received. ID: {webhookEvent.EventId}. Adding to queue...");
 
             await _queue.EnqueueNotificationAsync(webhookEvent);

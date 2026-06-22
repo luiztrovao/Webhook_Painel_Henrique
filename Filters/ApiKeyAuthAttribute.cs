@@ -1,3 +1,5 @@
+using System.Security.Cryptography;
+using System.Text;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 using WebhookService.Services;
@@ -25,7 +27,17 @@ public class ApiKeyAuthAttribute : IAsyncActionFilter
 
         var configuredApiKey = _configuration["WebhookApiKey"];
 
-        if (string.IsNullOrEmpty(configuredApiKey) || !configuredApiKey.Equals(extractedApiKey))
+        if (string.IsNullOrEmpty(configuredApiKey))
+        {
+            FileLogger.LogInfo("Access blocked: Server API Key not configured.");
+            context.Result = new UnauthorizedObjectResult(new { Error = "Server Configuration Error." });
+            return;
+        }
+
+        var configuredBytes = Encoding.UTF8.GetBytes(configuredApiKey);
+        var extractedBytes = Encoding.UTF8.GetBytes(extractedApiKey.ToString());
+
+        if (configuredBytes.Length != extractedBytes.Length || !CryptographicOperations.FixedTimeEquals(configuredBytes, extractedBytes))
         {
             FileLogger.LogInfo("Access blocked: Invalid API Key provided.");
             context.Result = new UnauthorizedObjectResult(new { Error = "Unauthorized client." });

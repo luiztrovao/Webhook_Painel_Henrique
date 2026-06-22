@@ -43,19 +43,31 @@ public class WebhookBackgroundWorker : BackgroundService
             }
             catch (Exception ex)
             {
-                FileLogger.LogError("Unexpected error processing event in background. Attempting to return to queue...", ex);
-                
                 if (webhookEvent != null && !stoppingToken.IsCancellationRequested)
                 {
-                    try
+                    webhookEvent.RetryCount++;
+
+                    if (webhookEvent.RetryCount > 3)
                     {
-                        await _queue.EnqueueNotificationAsync(webhookEvent, stoppingToken);
-                        await Task.Delay(TimeSpan.FromSeconds(5), stoppingToken);
+                        FileLogger.LogError($"DEAD LETTER: Event {webhookEvent.EventId} failed permanently after 3 retries.", ex);
                     }
-                    catch (Exception retryEx)
+                    else
                     {
-                        FileLogger.LogError("Error trying to re-enqueue event.", retryEx);
+                        FileLogger.LogError($"Error processing event {webhookEvent.EventId}. Attempt {webhookEvent.RetryCount}/3. Re-queueing...", ex);
+                        try
+                        {
+                            await _queue.EnqueueNotificationAsync(webhookEvent, stoppingToken);
+                            await Task.Delay(TimeSpan.FromSeconds(5), stoppingToken);
+                        }
+                        catch (Exception retryEx)
+                        {
+                            FileLogger.LogError("Error trying to re-enqueue event.", retryEx);
+                        }
                     }
+                }
+                else
+                {
+                    FileLogger.LogError("Unexpected error processing event in background.", ex);
                 }
             }
         }
